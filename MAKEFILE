@@ -1,0 +1,20 @@
+BINARY = main
+OBJECTS = main.o Expressions.o
+HEADERS = Expressions.h
+
+CC = g++
+CFLAGS = -std=c++11 -O0 -Wall -Wdeprecated -pedantic -g
+LDFLAGS = -g -lm32 -lSDL2main -lSDL2
+
+.PHONY: all clean
+
+all: $(BINARY)
+
+clean:
+	rm -f $(BINARY) $(OBJECTS)
+
+$(BINARY): $(OBJECTS)
+	$(CC) $(LDFLAGS) $^ -o $@
+
+%.o: %.c $(HEADERS)
+	$(CC) $(CFLAGS) -c $< -o $@

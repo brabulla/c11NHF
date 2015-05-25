@@ -3,7 +3,7 @@
 #include "Expressions.h"
 
 std::unique_ptr<Expression> Expression::simplify() const {
-    return clone();
+    return std::unique_ptr<Expression>(clone());
 }
 Constant::Constant(double inC) : c{inC} { }
 
@@ -32,8 +32,8 @@ Variable* Variable::clone() const{
 }
 
 std::ostream &operator<<(std::ostream &os, Expression const &e) {
-e.print(os);
-return os;
+    e.print(os);
+    return os;
 }
 
 TwoOperand::TwoOperand(std::unique_ptr<Expression>&& inLhs, std::unique_ptr<Expression>&& inRhs) : lhs{std::move(inLhs)}, rhs{std::move(inRhs)} {}
@@ -66,16 +66,16 @@ std::unique_ptr<Expression> Sum::simplify() const {
     std::unique_ptr<Constant> lhs_cons{dynamic_cast<Constant *>(lhs_simpl->clone())};
     std::unique_ptr<Constant> rhs_cons{dynamic_cast<Constant *>(rhs_simpl->clone())};
     if (lhs_cons && lhs_cons->get_value() == 0.0) {  /* 0 + a = a */
-        return rhs_simpl.release();
+        return std::unique_ptr<Expression>(rhs_simpl.release());
     }
     if (rhs_cons != nullptr && rhs_cons->get_value() == 0.0) {  /* a + 0 = a */
-        return lhs_simpl.release();
+        return std::unique_ptr<Expression>(lhs_simpl.release());
     }
     if (lhs_cons != nullptr && rhs_cons != nullptr) {   /* c + c = c */
         double new_value = lhs_cons->get_value() + rhs_cons->get_value();
-        return new Constant{new_value};
+        return std::unique_ptr<Expression>(new Constant{new_value});
     }
-    return new Sum{lhs_simpl.release(), rhs_simpl.release()};
+    return std::unique_ptr<Expression>(new Sum{std::move(lhs_simpl), std::move(rhs_simpl)});
 };
 
 double Prod::do_operator(double lhs, double rhs) const {
@@ -92,19 +92,19 @@ std::unique_ptr<Expression> Prod::simplify() const {
     std::unique_ptr<Constant> lhs_cons{dynamic_cast<Constant *>(lhs_simpl->clone())};
     std::unique_ptr<Constant> rhs_cons{dynamic_cast<Constant *>(rhs_simpl->clone())};
     if (lhs_cons && lhs_cons->get_value() == 1.0) {  /* 1 * a = a */
-        return rhs_simpl.release();
+        return std::unique_ptr<Expression>(rhs_simpl.release());
     }
     if ((rhs_cons && rhs_cons->get_value()==0.0) || (lhs_cons && lhs_cons->get_value() == 0.0)) {  /* 0 * a = 0 || a * 0 = 0 */
-        return new Constant{0};
+        return std::unique_ptr<Expression>(new Constant{0});
     }
     if (rhs_cons && rhs_cons->get_value() == 1.0) {  /* a + 1 = a */
-        return lhs_simpl.release();
+        return std::unique_ptr<Expression>(lhs_simpl.release());
     }
     if (lhs_cons && rhs_cons ) {   /* c * c = C */
         double new_value = lhs_cons->get_value() * rhs_cons->get_value();
-        return new Constant{new_value};
+        return std::unique_ptr<Expression>(new Constant{new_value});
     }
-    return new Prod{lhs_simpl, rhs_simpl};
+    return std::unique_ptr<Expression>(new Prod{std::move(lhs_simpl), std::move(rhs_simpl)});
 }
 
 double Dif::do_operator(double lhs, double rhs) const {
@@ -121,16 +121,16 @@ std::unique_ptr<Expression> Dif::simplify() const {
     std::unique_ptr<Constant> lhs_cons{dynamic_cast<Constant *>(lhs_simpl->clone())};
     std::unique_ptr<Constant> rhs_cons{dynamic_cast<Constant *>(rhs_simpl->clone())};
     if (lhs_cons && lhs_cons->get_value() == 0.0) {  /* 0 - a = -1 * a */
-        return new Prod{rhs_simpl,std::unique_ptr<Expression>(new Constant{-1.0})};
+        return std::unique_ptr<Expression>(new Prod{std::move(rhs_simpl),std::unique_ptr<Expression>(new Constant{-1.0})});
     }
     if (rhs_cons  && rhs_cons->get_value() == 0.0) {  /* a - 0  = a */
-        return lhs_simpl.release();
+        return std::unique_ptr<Expression>(lhs_simpl.release());
     }
     if (lhs_cons && rhs_cons ) {   /* c - c = C */
         double new_value = lhs_cons->get_value() - rhs_cons->get_value();
-        return new Constant{new_value};
+        return std::unique_ptr<Expression>(new Constant{new_value});
     }
-    return new Dif{lhs_simpl.release(), rhs_simpl.release()};
+    return std::unique_ptr<Expression>(new Dif{std::move(lhs_simpl), std::move(rhs_simpl)});
 }
 
 double Div::do_operator(double lhs, double rhs) const {
@@ -147,16 +147,16 @@ std::unique_ptr<Expression> Div::simplify() const {
     std::unique_ptr<Constant> lhs_cons{dynamic_cast<Constant *>(lhs_simpl->clone())};
     std::unique_ptr<Constant> rhs_cons{dynamic_cast<Constant *>(rhs_simpl->clone())};
     if (lhs_cons && lhs_cons->get_value() == 0.0) {  /* 0 / a = 0 */
-        return new Constant{0.0};
+        return std::unique_ptr<Expression>(new Constant{0.0});
     }
     if (rhs_cons && rhs_cons->get_value() == 0.0) {  /* a / 0  = ERR */
         throw std::runtime_error("Division by 0!");
     }
     if (lhs_cons && rhs_cons ) {   /* c / c = C */
         double new_value = lhs_cons->get_value() / rhs_cons->get_value();
-        return new Constant{new_value};
+        return std::unique_ptr<Expression>(new Constant{new_value});
     }
-    return new Div{lhs_simpl.release(), rhs_simpl.release()};
+    return std::unique_ptr<Expression>(new Div{std::move(lhs_simpl), std::move(rhs_simpl)});
 }
 
 Prod *Prod::clone() const {
@@ -193,22 +193,22 @@ std::unique_ptr<Expression> Exp::simplify() const {
     std::unique_ptr<Constant> lhs_cons{dynamic_cast<Constant *>(lhs_simpl->clone())};
     std::unique_ptr<Constant> rhs_cons{dynamic_cast<Constant *>(rhs_simpl->clone())};
     if (lhs_cons && lhs_cons->get_value() == 1.0) {  /* 1 ^ a = 1 */
-        return lhs_simpl.release();
+        return std::unique_ptr<Expression>(lhs_simpl.release());
     }
-    if (rhs_cons && rhs_cons->get_value() == 1.0) {  /* a + 1 = a */
-        return lhs_simpl.release();
+    if (rhs_cons && rhs_cons->get_value() == 1.0) {  /* a ^ 1 = a */
+        return std::unique_ptr<Expression>(lhs_simpl.release());
     }
-    if (rhs_cons && rhs_cons->get_value() == 0.0) {  /* a + 1 = a */
-        return new Constant{1};
+    if (rhs_cons && rhs_cons->get_value() == 0.0) {  /* a ^ 0 = 1 */
+        return std::unique_ptr<Expression>(new Constant{1});
     }
     if (lhs_cons && rhs_cons) {   /* c * c = C */
         double new_value = pow(lhs_cons->get_value(),rhs_cons->get_value());
-        return new Constant{new_value};
+        return std::unique_ptr<Expression>(new Constant{new_value});
     }
-    return new Exp{lhs_simpl.release(), rhs_simpl.release()};
+    return std::unique_ptr<Expression>(new Exp{std::move(lhs_simpl), std::move(rhs_simpl)});
 }
 
-Function::Function(std::unique_ptr<Expression>&& inArg, std::function<double(double)>&& func, std::string name) : arg{std::move(inArg)},functor{func}, name{name}{}
+Function::Function(std::unique_ptr<Expression>&& inArg, std::function<double(double)> func, std::string name) : arg{std::move(inArg)},functor{func}, name{name}{}
 
 Function::Function(const Function &in) : arg{in.arg->clone()},functor{in.functor}, name{in.name} { }
 
@@ -225,7 +225,7 @@ Expression *Function::clone() const {
 }
 
 std::unique_ptr<Expression> Function::simplify() const {
-    return new Function{arg->simplify(),functor,name};
+    return std::unique_ptr<Expression>(new Function(std::move(arg->simplify()),functor,name));
 }
 
 

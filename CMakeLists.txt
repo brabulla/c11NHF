@@ -9,4 +9,4 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "C:\\Link\\programozas\\C++\\Clion\\c11NHF\\o
 set(SOURCE_FILES main.cpp)
 add_executable(c11NHF ${SOURCE_FILES} Expressions.h Expressions.cpp )
 
-target_link_libraries(c11NHF stdc++ mingw32 SDL2main SDL2 stdc++)
+target_link_libraries(c11NHF mingw32 SDL2main SDL2)

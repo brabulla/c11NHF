@@ -150,43 +150,43 @@ std::function<double(double)> parseFunction(const std::string &s) {
  * @param RPNExp string, in Reverse Polish Notation format.
  * @return pointer to the Expression Tree
  */
-Expression *buildTree(std::string RPNExp) {
+std::unique_ptr<Expression> buildTree(std::string RPNExp) {
     std::vector<std::string> RPNTokens = split(RPNExp, ' ');
-    std::deque<Expression *> expStack;
+    std::deque<std::unique_ptr<Expression> > expStack;
     for (auto item : RPNTokens) {
         try {
             if (std::regex_match(item, std::regex("[[:digit:]]+.?[[:digit:]]*"))) {
-                expStack.push_back(new Constant(atof(item.c_str())));
+                expStack.push_back(std::unique_ptr<Expression>(new Constant(atof(item.c_str()))));
             } else if (std::regex_match(item, std::regex("[+-/*^]"))) {
-                std::unique_ptr<Expression> rhs = expStack.back();
+                std::unique_ptr<Expression> rhs(std::move(expStack.back()));
                 expStack.pop_back();
-                std::unique_ptr<Expression> lhs = expStack.back();
+                std::unique_ptr<Expression> lhs(std::move(expStack.back()));
                 expStack.pop_back();
                 switch (item.at(0)) {
                     case '+':
-                        expStack.push_back(new Sum{lhs, rhs});
+                        expStack.push_back(std::unique_ptr<Expression>(new Sum{std::move(lhs), std::move(rhs)}));
                         break;
                     case '*':
-                        expStack.push_back(new Prod{lhs, rhs});
+                        expStack.push_back(std::unique_ptr<Expression>(new Prod{std::move(lhs), std::move(rhs)}));
                         break;
                     case '/':
-                        expStack.push_back(new Div{lhs, rhs});
+                        expStack.push_back(std::unique_ptr<Expression>(new Div{std::move(lhs), std::move(rhs)}));
                         break;
                     case '-':
-                        expStack.push_back(new Dif{lhs, rhs});
+                        expStack.push_back(std::unique_ptr<Expression>(new Dif{std::move(lhs), std::move(rhs)}));
                         break;
                     case '^':
-                        expStack.push_back(new Exp{lhs, rhs});
+                        expStack.push_back(std::unique_ptr<Expression>(new Exp{std::move(lhs), std::move(rhs)}));
                         break;
                 }
             } else if (std::regex_match(item, std::regex("X"))) {
-                expStack.push_back(new Variable{});
+                expStack.push_back(std::unique_ptr<Expression>(new Variable{}));
             } else{
                 try{
                     std::function<double(double)> func{parseFunction(item)};
-                    std::unique_ptr<Expression> arg = expStack.back();
+                    std::unique_ptr<Expression> arg(std::move(expStack.back()));
                     expStack.pop_back();
-                    expStack.push_back(new Function{arg.rele,func,item});
+                    expStack.push_back(std::unique_ptr<Expression>(new Function{std::move(arg),func,item}));
                 }catch (...){
 
                 }
@@ -195,7 +195,7 @@ Expression *buildTree(std::string RPNExp) {
             cout << e.code();
         }
     }
-    return expStack.front();
+    return std::unique_ptr<Expression>(std::move(expStack.front()));
 }
 
 /**
@@ -206,7 +206,7 @@ Expression *buildTree(std::string RPNExp) {
  * @param maxX max X value to draw
  * @param maxY max Y value to draw
  */
-void drawFunction(SDL_Window * window, unique_ptr<Expression> exp,int maxX,int maxY){
+void drawFunction(SDL_Window * window, shared_ptr<Expression> exp,int maxX,int maxY){
 
     SDL_Surface* screenSurface = SDL_GetWindowSurface(window);
     SDL_Renderer* renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED);
@@ -259,8 +259,8 @@ int main(int argc, char *argv[]) {
     //string s = parseString("X + 4 ^ 2 * 2 / (5 - 1) ");
     //string s2 = parseString("abs(sin(X))");
 
-    std::unique_ptr<Expression> e = buildTree(parseString(func));
-    std::unique_ptr<Expression> esimpl=e->simplify();
+    std::shared_ptr<Expression> e = buildTree(parseString(func));
+    std::shared_ptr<Expression> esimpl=e->simplify();
     //The window we'll be rendering to
     SDL_Window *window = NULL;
 

@@ -145,7 +145,7 @@ public:
  */
 class Sum final: public TwoOperand{
 public:
-    Sum(std::unique_ptr<Expression>&& inLhs, std::unique_ptr<Expression>&& inRhs)  : TwoOperand(inLhs, inRhs) {}
+    Sum(std::unique_ptr<Expression>&& inLhs, std::unique_ptr<Expression>&& inRhs)  : TwoOperand(std::move(inLhs), std::move(inRhs)) {}
 
     /**
      * Adds the two arguments together and returns the result.
@@ -175,7 +175,7 @@ public:
  */
 class Prod final: public TwoOperand{
 public:
-    Prod(std::unique_ptr<Expression>&& inLhs,std::unique_ptr<Expression>&& inRhs) : TwoOperand(inLhs, inRhs) { }
+    Prod(std::unique_ptr<Expression>&& inLhs,std::unique_ptr<Expression>&& inRhs) : TwoOperand(std::move(inLhs), std::move(inRhs)) { }
 
     /**
      * Multiplies the two arguments together and returns the result.
@@ -206,7 +206,7 @@ public:
 class Dif final: public TwoOperand{
 public:
 
-    Dif(std::unique_ptr<Expression>&& inLhs, std::unique_ptr<Expression>&& inRhs) : TwoOperand(inLhs, inRhs) { }
+    Dif(std::unique_ptr<Expression>&& inLhs, std::unique_ptr<Expression>&& inRhs) : TwoOperand(std::move(inLhs), std::move(inRhs)) { }
 
     /**
      * Substracts the rhs from the lhs and returns the result.
@@ -236,7 +236,7 @@ public:
 class Div final: public TwoOperand{
 public:
 
-    Div(std::unique_ptr<Expression>&& inLhs,std::unique_ptr<Expression>&& inRhs) : TwoOperand(inLhs, inRhs) { }
+    Div(std::unique_ptr<Expression>&& inLhs,std::unique_ptr<Expression>&& inRhs) : TwoOperand(std::move(inLhs), std::move(inRhs)) { }
 
     /**
      * Divides the lhs with the rhs and returns the result.
@@ -264,7 +264,7 @@ public:
  */
 class Exp final: public TwoOperand{
 public:
-    Exp(std::unique_ptr<Expression>&& inLhs,std::unique_ptr<Expression>&& inRhs) : TwoOperand(inLhs, inRhs) { }
+    Exp(std::unique_ptr<Expression>&& inLhs,std::unique_ptr<Expression>&& inRhs) : TwoOperand(std::move(inLhs), std::move(inRhs)) { }
 
     /**
      * Places lhs to the rhs-th power.
@@ -296,7 +296,7 @@ public:
 
     std::string name;
 
-    Function(std::unique_ptr<Expression>&& inArg,std::function<double(double)>&& func, std::string name );
+    Function(std::unique_ptr<Expression>&& inArg,std::function<double(double)> func, std::string name );
 
     Function(const Function& in);
 
